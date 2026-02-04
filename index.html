@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Breathing</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+
+  <body>
+    <main class="screen">
+      <header class="top">
+        <div class="segmented" role="tablist" aria-label="Схемы дыхания">
+          <button class="seg active" type="button" aria-selected="true">Квадрат</button>
+          <button class="seg" type="button" disabled aria-selected="false">4-7-8</button>
+        </div>
+      </header>
+
+      <section class="center">
+        <div class="countdown" id="countdown">3</div>
+
+        <div class="squareCard" id="squareCard" hidden>
+          <div class="square" aria-hidden="true">
+  <div class="progressLayer" aria-hidden="true">
+    <div class="bar bar-left" id="barLeft"></div>
+    <div class="bar bar-top" id="barTop"></div>
+    <div class="bar bar-right" id="barRight"></div>
+    <div class="bar bar-bottom" id="barBottom"></div>
+  </div>
+</div>
+
+
+          <div class="phase">
+            <div class="phaseTitle" id="phaseTitle">Вдох</div>
+            <div class="phaseSeconds" id="phaseSeconds">4</div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="bottom">
+        <button class="btn primary" id="restartBtn" type="button">Перезапустить</button>
+        <button class="btn ghost" id="pauseBtn" type="button">Пауза</button>
+      </footer>
+    </main>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,172 @@
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+
+body {
+  font-family: -apple-system, system-ui, Segoe UI, Roboto, Arial, sans-serif;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.screen{
+  min-height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 16px;
+  padding: 18px 16px 22px;
+}
+
+.top { display: grid; place-items: center; }
+
+.segmented{
+  display: inline-grid;
+  grid-auto-flow: column;
+  gap: 6px;
+  padding: 6px;
+  background: #f1f5f9;
+  border-radius: 999px;
+}
+
+.seg{
+  border: 0;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: transparent;
+  color: #334155;
+  font-weight: 600;
+}
+.seg.active{
+  background: #2563eb;
+  color: #fff;
+}
+.seg:disabled{
+  opacity: 0.5;
+}
+
+.center{
+  display: grid;
+  place-items: center;
+}
+
+.countdown{
+  font-size: 88px;
+  font-weight: 700;
+  color: #2563eb;
+  line-height: 1;
+}
+
+.squareCard{
+  width: min(360px, 100%);
+  display: grid;
+  place-items: center;
+  gap: 14px;
+}
+
+.square{
+  width: 240px;
+  height: 240px;
+  border: 10px solid #e2e8f0;
+  border-radius: 18px;
+}
+
+.phase{
+  display: grid;
+  place-items: center;
+  gap: 4px;
+}
+
+.phaseTitle{
+  font-size: 16px;
+  color: #334155;
+  font-weight: 600;
+}
+
+.phaseSeconds{
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.bottom{
+  display: grid;
+  place-items: center;
+  gap: 10px;
+}
+
+.btn{
+  width: min(320px, 100%);
+  padding: 12px 14px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  font-weight: 650;
+}
+
+.btn.primary{
+  background: var(--tg-button, #2563eb);
+  border-color: var(--tg-button, #2563eb);
+  color: var(--tg-button-text, #fff);
+}
+
+.btn.ghost{
+  background: transparent;
+  border: 0;
+  color: #334155;
+}
+[hidden] { display: none !important; }
+.square {
+  position: relative;
+  overflow: visible; /* чтобы слой мог лечь поверх бордера */
+}
+
+/* слой поверх серого бордера */
+.progressLayer {
+  position: absolute;
+  inset: -10px; /* = толщина серого border (у тебя 10px) */
+  pointer-events: none;
+}
+
+/* общие параметры линии */
+.bar {
+  position: absolute;
+  background: #2563eb;
+  border-radius: 999px;
+  opacity: 0; /* по умолчанию скрыты */
+  transform: scaleX(0);
+}
+
+/* 4 стороны, толщину берём 10px (как у бордера) */
+.bar-left {
+  left: 0;
+  bottom: 0;
+  width: 10px;
+  height: 100%;
+  transform-origin: bottom;
+  transform: scaleY(0);
+}
+
+.bar-top {
+  left: 0;
+  top: 0;
+  height: 10px;
+  width: 100%;
+  transform-origin: left;
+  transform: scaleX(0);
+}
+
+.bar-right {
+  right: 0;
+  top: 0;
+  width: 10px;
+  height: 100%;
+  transform-origin: top;
+  transform: scaleY(0);
+}
+
+.bar-bottom {
+  left: 0;
+  bottom: 0;
+  height: 10px;
+  width: 100%;
+  transform-origin: right; /* чтобы росло справа налево */
+  transform: scaleX(0);
+}
