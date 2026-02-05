@@ -34,6 +34,10 @@ function initTelegram() {
 
 initTelegram();
 // --- /Telegram WebApp integration ---
+function haptic(type = "soft") {
+  const tg = window.Telegram?.WebApp;
+  tg?.HapticFeedback?.impactOccurred?.(type);
+}
 
 console.log("app.js loaded ✅");
 
@@ -217,6 +221,9 @@ function startBreathing() {
     if (secondsLeft <= 0) {
       stepIndex = (stepIndex + 1) % SQUARE_FLOW.length;
       secondsLeft = SQUARE_FLOW[stepIndex].seconds;
+
+      haptic("soft");
+
 
       // reset smooth progress timer for the new phase
       stepStartedAt = performance.now();
