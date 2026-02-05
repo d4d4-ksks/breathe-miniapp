@@ -2,21 +2,27 @@
 const tg = window.Telegram?.WebApp;
 
 function applyTelegramTheme() {
+  const tg = window.Telegram?.WebApp;
   if (!tg) return;
 
   const p = tg.themeParams || {};
-  // Эти переменные мы используем, чтобы легко связать с CSS (даже если пока не трогаешь CSS — ок)
-  document.documentElement.style.setProperty("--tg-bg", p.bg_color || "#ffffff");
-  document.documentElement.style.setProperty("--tg-text", p.text_color || "#0f172a");
-  document.documentElement.style.setProperty("--tg-hint", p.hint_color || "#64748b");
-  document.documentElement.style.setProperty("--tg-link", p.link_color || "#2563eb");
-  document.documentElement.style.setProperty("--tg-button", p.button_color || "#2563eb");
-  document.documentElement.style.setProperty("--tg-button-text", p.button_text_color || "#ffffff");
 
-  // Если хочешь, чтобы фон совпадал с Telegram — можно прямо тут применить:
-  document.body.style.background = getComputedStyle(document.documentElement).getPropertyValue("--tg-bg").trim();
-  document.body.style.color = getComputedStyle(document.documentElement).getPropertyValue("--tg-text").trim();
+  // Telegram theme params (fallbacks на случай, если чего-то нет)
+  const bg = p.bg_color || "#ffffff";
+  const text = p.text_color || "#0f172a";
+  const hint = p.hint_color || "#64748b";
+  const link = p.link_color || "#2563eb";
+  const btn = p.button_color || link || "#2563eb";
+  const btnText = p.button_text_color || "#ffffff";
+
+  document.documentElement.style.setProperty("--bg", bg);
+  document.documentElement.style.setProperty("--text", text);
+  document.documentElement.style.setProperty("--muted", hint);
+  document.documentElement.style.setProperty("--accent", link);
+  document.documentElement.style.setProperty("--button", btn);
+  document.documentElement.style.setProperty("--buttonText", btnText);
 }
+
 
 function initTelegram() {
   if (!tg) return;
