@@ -41,7 +41,7 @@ body {
   padding: 8px 14px;
   border-radius: 999px;
   background: transparent;
-  color: #334155;
+  color: var(--text) !important;
   font-weight: 600;
 }
 .seg.active{
@@ -86,14 +86,14 @@ body {
 
 .phaseTitle{
   font-size: 16px;
-  color: var(--muted);
+  color: var(--text) !important;
   font-weight: 600;
 }
 
 .phaseSeconds{
   font-size: 20px;
   font-weight: 700;
-  color: var(--text);
+  color: var(--text) !important;
 }
 
 .bottom{
@@ -120,7 +120,8 @@ body {
 .btn.ghost{
   background: transparent;
   border: 0;
-  color: #334155;
+  color: var(--text) !important;
+  opacity: 0.9;
 }
 
 .square {
