@@ -1,10 +1,20 @@
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
+:root {
+  --bg: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --accent: #2563eb;
+  --button: #2563eb;
+  --buttonText: #ffffff;
+}
+
+[hidden] { display: none !important; }
 
 body {
   font-family: -apple-system, system-ui, Segoe UI, Roboto, Arial, sans-serif;
-  background: #ffffff;
-  color: #0f172a;
+  background: var(--bg);
+  color: var(--text);
 }
 
 .screen{
@@ -50,7 +60,7 @@ body {
 .countdown{
   font-size: 88px;
   font-weight: 700;
-  color: #2563eb;
+  color: var(--accent);
   line-height: 1;
 }
 
@@ -76,14 +86,14 @@ body {
 
 .phaseTitle{
   font-size: 16px;
-  color: #334155;
+  color: var(--muted);
   font-weight: 600;
 }
 
 .phaseSeconds{
   font-size: 20px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .bottom{
@@ -102,9 +112,9 @@ body {
 }
 
 .btn.primary{
-  background: var(--tg-button, #2563eb);
-  border-color: var(--tg-button, #2563eb);
-  color: var(--tg-button-text, #fff);
+  background: var(--button);
+  border-color: var(--button);
+  color: var(--buttonText);
 }
 
 .btn.ghost{
@@ -112,7 +122,7 @@ body {
   border: 0;
   color: #334155;
 }
-[hidden] { display: none !important; }
+
 .square {
   position: relative;
   overflow: visible; /* чтобы слой мог лечь поверх бордера */
