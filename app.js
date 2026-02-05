@@ -7,6 +7,7 @@ function applyTelegramTheme() {
 
   const p = tg.themeParams || {};
 
+  // базовые цвета Telegram (с фолбэками)
   const bg = p.bg_color || "#000000";
   const text = p.text_color || "#ffffff";
   const hint = p.hint_color || "#9ca3af";
@@ -14,7 +15,7 @@ function applyTelegramTheme() {
   const btn = p.button_color || link || "#2563eb";
   const btnText = p.button_text_color || "#ffffff";
 
-  // helper: hex -> luminance
+  // helpers
   const hexToRgb = (hex) => {
     const h = String(hex).replace("#", "").trim();
     const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
@@ -31,31 +32,77 @@ function applyTelegramTheme() {
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
   };
 
+  const clamp01 = (x) => Math.max(0, Math.min(1, x));
+
+  const mix = (a, b, t) => {
+    // a,b: {r,g,b}, t 0..1
+    t = clamp01(t);
+    return {
+      r: Math.round(a.r + (b.r - a.r) * t),
+      g: Math.round(a.g + (b.g - a.g) * t),
+      b: Math.round(a.b + (b.b - a.b) * t),
+    };
+  };
+
+  const rgbToCss = (c, alpha = 1) => {
+    alpha = clamp01(alpha);
+    return `rgba(${c.r},${c.g},${c.b},${alpha})`;
+  };
+
+  // определяем "тёмная ли тема" по яркости фона
+  let isDark = true;
+  let bgRgb = { r: 0, g: 0, b: 0 };
+
+  try {
+    bgRgb = hexToRgb(bg);
+    const bgLum = luminance(bgRgb);
+    isDark = bgLum < 0.35;
+  } catch (e) {
+    isDark = true;
+  }
+
+  // безопасные текстовые цвета (если Telegram отдал странные значения)
   let safeText = text;
   let safeMuted = hint;
 
-  // если фон тёмный, но Telegram вдруг дал тёмный text/hint — исправим
   try {
-    const bgLum = luminance(hexToRgb(bg));
     const textLum = luminance(hexToRgb(text));
     const hintLum = luminance(hexToRgb(hint));
 
-    const bgIsDark = bgLum < 0.35;
-    if (bgIsDark && textLum < 0.55) safeText = "#ffffff";
-    if (bgIsDark && hintLum < 0.45) safeMuted = "rgba(255,255,255,0.7)";
+    if (isDark && textLum < 0.55) safeText = "#ffffff";
+    if (isDark && hintLum < 0.45) safeMuted = "rgba(255,255,255,0.7)";
   } catch (e) {
-    // если что-то пошло не так с парсингом — просто ставим безопасные значения для тёмного UI
-    safeText = "#ffffff";
-    safeMuted = "rgba(255,255,255,0.7)";
+    if (isDark) {
+      safeText = "#ffffff";
+      safeMuted = "rgba(255,255,255,0.7)";
+    }
   }
 
+  // прокидываем основные переменные
   document.documentElement.style.setProperty("--bg", bg);
   document.documentElement.style.setProperty("--text", safeText);
   document.documentElement.style.setProperty("--muted", safeMuted);
   document.documentElement.style.setProperty("--accent", link);
   document.documentElement.style.setProperty("--button", btn);
   document.documentElement.style.setProperty("--buttonText", btnText);
+
+  // -------- segmented (чтобы disabled не сливался) --------
+  // идея: в dark theme делаем подложку сегмента темнее,
+  // а текст — светлым; disabled — приглушённым.
+  // В light theme оставляем как раньше.
+
+  if (isDark) {
+    // подложка: светлый "туман" на тёмном фоне
+    document.documentElement.style.setProperty("--segBg", "rgba(255,255,255,0.10)");
+    document.documentElement.style.setProperty("--segText", "rgba(255,255,255,0.92)");
+    document.documentElement.style.setProperty("--segDisabledText", "rgba(255,255,255,0.55)");
+  } else {
+    document.documentElement.style.setProperty("--segBg", "#f1f5f9");
+    document.documentElement.style.setProperty("--segText", "#334155");
+    document.documentElement.style.setProperty("--segDisabledText", "rgba(51,65,85,0.45)");
+  }
 }
+
 
 
 
