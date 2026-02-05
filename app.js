@@ -7,21 +7,56 @@ function applyTelegramTheme() {
 
   const p = tg.themeParams || {};
 
-  // Telegram theme params (fallbacks на случай, если чего-то нет)
-  const bg = p.bg_color || "#ffffff";
-  const text = p.text_color || "#0f172a";
-  const hint = p.hint_color || "#64748b";
-  const link = p.link_color || "#2563eb";
+  const bg = p.bg_color || "#000000";
+  const text = p.text_color || "#ffffff";
+  const hint = p.hint_color || "#9ca3af";
+  const link = p.link_color || "#60a5fa";
   const btn = p.button_color || link || "#2563eb";
   const btnText = p.button_text_color || "#ffffff";
 
+  // helper: hex -> luminance
+  const hexToRgb = (hex) => {
+    const h = String(hex).replace("#", "").trim();
+    const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+    const n = parseInt(full, 16);
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+  };
+
+  const luminance = (c) => {
+    const toLin = (v) => {
+      v /= 255;
+      return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    };
+    const r = toLin(c.r), g = toLin(c.g), b = toLin(c.b);
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+
+  let safeText = text;
+  let safeMuted = hint;
+
+  // если фон тёмный, но Telegram вдруг дал тёмный text/hint — исправим
+  try {
+    const bgLum = luminance(hexToRgb(bg));
+    const textLum = luminance(hexToRgb(text));
+    const hintLum = luminance(hexToRgb(hint));
+
+    const bgIsDark = bgLum < 0.35;
+    if (bgIsDark && textLum < 0.55) safeText = "#ffffff";
+    if (bgIsDark && hintLum < 0.45) safeMuted = "rgba(255,255,255,0.7)";
+  } catch (e) {
+    // если что-то пошло не так с парсингом — просто ставим безопасные значения для тёмного UI
+    safeText = "#ffffff";
+    safeMuted = "rgba(255,255,255,0.7)";
+  }
+
   document.documentElement.style.setProperty("--bg", bg);
-  document.documentElement.style.setProperty("--text", text);
-  document.documentElement.style.setProperty("--muted", hint);
+  document.documentElement.style.setProperty("--text", safeText);
+  document.documentElement.style.setProperty("--muted", safeMuted);
   document.documentElement.style.setProperty("--accent", link);
   document.documentElement.style.setProperty("--button", btn);
   document.documentElement.style.setProperty("--buttonText", btnText);
 }
+
 
 
 function initTelegram() {
