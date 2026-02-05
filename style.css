@@ -32,24 +32,24 @@ body {
   grid-auto-flow: column;
   gap: 6px;
   padding: 6px;
-  background: rgba(255,255,255,0.10);
+  background: var(--segBg, #f1f5f9);
   border-radius: 999px;
 }
 
 .seg{
-  border: 0;
+  bborder: 0;
   padding: 8px 14px;
   border-radius: 999px;
   background: transparent;
-  color: var(--text) !important;
+  color: var(--segText, #334155);
   font-weight: 600;
 }
 .seg.active{
-  background: #2563eb;
-  color: #fff;
+  background: var(--button, #2563eb);
+  color: var(--buttonText, #fff);
 }
 .seg:disabled{
-  color: var(--muted) !important;
+  color: var(--segDisabledText, rgba(51,65,85,0.45));
   opacity: 1;
 }
 
