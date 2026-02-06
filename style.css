@@ -236,3 +236,11 @@ body.is-dark{
   pointer-events: none;
   z-index: 2;
 }
+#squareProgress{
+  transition: opacity 180ms ease;
+}
+
+#squareProgress.is-resetting{
+  opacity: 0;
+}
+
