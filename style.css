@@ -188,12 +188,16 @@ body {
 
 .phase-inSquare{
   position: absolute;
-  inset: 0;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   display: grid;
   place-items: center;
   gap: 6px;
   text-align: center;
-  pointer-events: none; /* чтобы не мешало кнопкам/тачам */
+  pointer-events: none;
 }
+
+
 .phaseTitle{ font-size: 16px; }
 .phaseSeconds{ font-size: 22px; }
