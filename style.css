@@ -8,6 +8,7 @@ html, body { height: 100%; margin: 0; }
   --button: #2563eb;
   --buttonText: #ffffff;
   --square-bg: rgba(15,23,42,0.12);
+  --counter: rgba(15,23,42,0.55);
 }
 
 [hidden] { display: none !important; }
@@ -85,7 +86,7 @@ body.is-dark{
 .phaseSeconds{
   font-size: 20px;
   font-weight: 700;
-  color: var(--text) !important;
+  color: var(--counter) !important;
   margin-top: -16px;
 }
 
