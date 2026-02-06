@@ -267,3 +267,27 @@ body.is-dark{
   from { transform: scale(0.985); }
   to   { transform: scale(1); }
 }
+/* Плавность текста внутри квадрата */
+.phaseTitle,
+.phaseSeconds {
+  transition: opacity 160ms ease, transform 160ms ease;
+  will-change: opacity, transform;
+}
+
+/* затухание перед сменой фазы */
+.phase.is-fading .phaseTitle,
+.phase.is-fading .phaseSeconds {
+  opacity: 0;
+  transform: translateY(2px);
+}
+
+/* пульс цифры на тик секунды */
+.phaseSeconds.is-ticking {
+  animation: tickPulse 140ms ease;
+}
+
+@keyframes tickPulse {
+  from { transform: scale(0.985); }
+  to   { transform: scale(1); }
+}
+
