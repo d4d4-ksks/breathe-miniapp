@@ -14,9 +14,10 @@ html, body { height: 100%; margin: 0; }
 [hidden] { display: none !important; }
 
 body {
-  font-family: -apple-system, system-ui, Segoe UI, Roboto, Arial, sans-serif;
+  font-family: "Mulish", -apple-system, system-ui, Segoe UI, Roboto, Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
+  
 }
 body.dark,
 body.is-dark{
@@ -290,4 +291,5 @@ body.is-dark{
   from { transform: scale(0.985); }
   to   { transform: scale(1); }
 }
+.phaseSeconds, .countdown { font-variant-numeric: tabular-nums; }
 
