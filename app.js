@@ -113,7 +113,9 @@ const restartBtn = must("restartBtn");
 const pauseBtn = must("pauseBtn");
 
 // phase container (for text animations)
-const phaseBox = document.querySelector(".phase");
+const phaseBox = document.querySelector(".phase.phase-inSquare");
+console.log("phaseBox found:", !!phaseBox);
+
 
 // SVG progress
 const squareProgress = must("squareProgress");
