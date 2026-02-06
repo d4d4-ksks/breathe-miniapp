@@ -79,12 +79,14 @@ body.is-dark{
   font-size: 16px;
   color: var(--text) !important;
   font-weight: 600;
+  margin-bottom: -16px;
 }
 
 .phaseSeconds{
   font-size: 20px;
   font-weight: 700;
   color: var(--text) !important;
+  margin-top: -16px;
 }
 
 .bottom{
