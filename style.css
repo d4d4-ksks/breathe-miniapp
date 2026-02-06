@@ -85,7 +85,7 @@ body.is-dark{
 
 .phaseSeconds{
   font-size: 20px;
-  font-weight: 700;
+  font-weight: 400;
   color: var(--counter) !important;
   margin-top: -16px;
 }
@@ -189,8 +189,8 @@ body.is-dark{
 }
 
 
-.phaseTitle{ font-size: 16px; }
-.phaseSeconds{ font-size: 22px; }
+.phaseTitle{ font-size: 24px; }
+.phaseSeconds{ font-size: 20px; }
 .square .phase-inSquare{
   position: absolute;
   inset: 0;                 /* растягиваем на весь квадрат */
