@@ -213,3 +213,13 @@ body {
 }
 .progressLayer { z-index: 1; }
 
+.squareSvg {
+  display: block;
+}
+
+.square {
+  position: relative;
+  width: 240px;
+  height: 240px;
+  margin: 0 auto;
+}
