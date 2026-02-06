@@ -7,6 +7,7 @@ html, body { height: 100%; margin: 0; }
   --accent: #2563eb;
   --button: #2563eb;
   --buttonText: #ffffff;
+  --square-bg: rgba(15,23,42,0.12);
 }
 
 [hidden] { display: none !important; }
@@ -16,7 +17,10 @@ body {
   background: var(--bg);
   color: var(--text);
 }
-
+body.dark,
+body.is-dark{
+  --square-bg: rgba(255,255,255,0.25);
+}
 .screen{
   min-height: 100%;
   display: grid;
@@ -176,7 +180,7 @@ body {
   transform: translate(-50%, -50%);
   display: grid;
   place-items: center;
-  gap: 6px;
+  gap: 2px;
   text-align: center;
   pointer-events: none;
 }
