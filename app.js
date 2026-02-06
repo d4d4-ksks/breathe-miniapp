@@ -112,14 +112,13 @@ const elPhaseSeconds = must("phaseSeconds");
 const restartBtn = must("restartBtn");
 const pauseBtn = must("pauseBtn");
 
-// phase container (for future text animations, optional)
+// phase container (for text animations)
 const phaseBox = document.querySelector(".phase");
 
 // SVG progress
 const squareProgress = must("squareProgress");
 
-// ensure we can animate reset opacity via CSS class (optional)
-// if you don't have CSS yet, you can add:
+// If you want smooth fade reset, add in CSS:
 // #squareProgress{ transition: opacity 180ms ease; }
 // #squareProgress.is-resetting{ opacity: 0; }
 let totalLen = 0;
@@ -138,6 +137,28 @@ initSvgProgress();
 function setCumulativeProgress(len) {
   const L = Math.max(0, Math.min(totalLen, len));
   squareProgress.style.strokeDashoffset = String(totalLen - L);
+}
+
+// text animations
+function animatePhaseTextChange() {
+  if (!phaseBox) {
+    render();
+    return;
+  }
+
+  phaseBox.classList.add("is-fading");
+  // short fade-out, then update, then fade-in via CSS transition
+  setTimeout(() => {
+    render();
+    phaseBox.classList.remove("is-fading");
+  }, 110);
+}
+
+function animateSecondTick() {
+  // pulse only the seconds
+  elPhaseSeconds.classList.remove("is-ticking");
+  void elPhaseSeconds.offsetWidth; // restart animation
+  elPhaseSeconds.classList.add("is-ticking");
 }
 
 // state
@@ -175,6 +196,9 @@ function render() {
     pauseBtn.textContent = "Пауза";
 
     setCumulativeProgress(0);
+
+    // remove tick animation class during countdown
+    elPhaseSeconds.classList.remove("is-ticking");
     paused = false;
     return;
   }
@@ -215,7 +239,6 @@ function startRaf() {
 }
 
 function softResetProgress() {
-  // fade-out -> reset -> fade-in
   squareProgress.classList.add("is-resetting");
   setTimeout(() => {
     setCumulativeProgress(0);
@@ -258,6 +281,9 @@ function startBreathing() {
   setCumulativeProgress(0);
   startRaf();
 
+  // initial tick pulse (optional)
+  animateSecondTick();
+
   timerId = setInterval(() => {
     if (mode !== "breathing") return;
     if (paused) return;
@@ -280,11 +306,14 @@ function startBreathing() {
         softResetProgress();
       }
 
-      render();
+      // smooth phase text change
+      animatePhaseTextChange();
       return;
     }
 
+    // normal second tick
     render();
+    animateSecondTick();
   }, 1000);
 }
 
@@ -296,16 +325,19 @@ pauseBtn.addEventListener("click", () => {
   if (!paused) {
     paused = true;
     pausedAt = now;
+    // stop tick pulse while paused
+    elPhaseSeconds.classList.remove("is-ticking");
   } else {
     paused = false;
     pausedTotal += (now - pausedAt);
+    // resume pulse on resume
+    animateSecondTick();
   }
 
   render();
 });
 
 restartBtn.addEventListener("click", () => {
-  // On restart: also reset progress visibility and timers
   startCountdown();
 });
 
