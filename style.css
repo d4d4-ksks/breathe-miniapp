@@ -182,3 +182,18 @@ body {
   transform-origin: right; /* чтобы росло справа налево */
   transform: scaleX(0);
 }
+.square{
+  position: relative; /* уже есть, но пусть будет */
+}
+
+.phase-inSquare{
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  text-align: center;
+  pointer-events: none; /* чтобы не мешало кнопкам/тачам */
+}
+.phaseTitle{ font-size: 16px; }
+.phaseSeconds{ font-size: 22px; }
