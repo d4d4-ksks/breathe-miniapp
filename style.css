@@ -220,3 +220,15 @@ body.is-breathing #squareProgress { opacity: 1; }
   place-items: center;
   gap: 14px;
 }
+.square .phase.phase-inSquare{
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  text-align: center;
+  pointer-events: none;
+  z-index: 2;
+}
