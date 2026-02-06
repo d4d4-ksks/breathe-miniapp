@@ -21,7 +21,7 @@ function applyTelegramTheme() {
   const btn = p.button_color || link || "#2563eb";
   const btnText = p.button_text_color || "#ffffff";
 
-  // helpers for "isDark"
+  // helpers
   const hexToRgb = (hex) => {
     const h = String(hex).replace("#", "").trim();
     const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
@@ -45,9 +45,10 @@ function applyTelegramTheme() {
     isDark = false;
   }
 
-  // safe text/hint
+  // safe text/hint on dark backgrounds
   let safeText = text;
   let safeMuted = hint;
+
   try {
     const textLum = luminance(hexToRgb(text));
     const hintLum = luminance(hexToRgb(hint));
@@ -67,22 +68,16 @@ function applyTelegramTheme() {
   document.documentElement.style.setProperty("--button", btn);
   document.documentElement.style.setProperty("--buttonText", btnText);
 
-  // segmented (чтобы disabled не сливался)
+  // segmented colors
   document.documentElement.style.setProperty("--segBg", isDark ? "rgba(255,255,255,0.10)" : "#f1f5f9");
   document.documentElement.style.setProperty("--segText", isDark ? "rgba(255,255,255,0.92)" : "#334155");
   document.documentElement.style.setProperty("--segDisabledText", isDark ? "rgba(255,255,255,0.55)" : "rgba(51,65,85,0.45)");
 
-  // фон квадрата
-  document.documentElement.style.setProperty(
-    "--square-bg",
-    isDark ? "rgba(255,255,255,0.25)" : "rgba(15,23,42,0.12)"
-  );
+  // square base stroke
+  document.documentElement.style.setProperty("--square-bg", isDark ? "rgba(255,255,255,0.25)" : "rgba(15,23,42,0.12)");
 
-  // цифры секунд внутри квадрата
-  document.documentElement.style.setProperty(
-    "--counter",
-    isDark ? "rgba(255,255,255,0.65)" : "rgba(15,23,42,0.55)"
-  );
+  // light-gray seconds inside square
+  document.documentElement.style.setProperty("--counter", isDark ? "rgba(255,255,255,0.65)" : "rgba(15,23,42,0.55)");
 }
 
 function initTelegram() {
@@ -101,7 +96,7 @@ function haptic(type = "soft") {
   window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.(type);
 }
 
-// --- breathing flow ---
+// --- flow ---
 const SQUARE_FLOW = [
   { key: "inhale", label: "Вдох", seconds: 4 },
   { key: "hold1",  label: "Задержка", seconds: 4 },
@@ -117,10 +112,16 @@ const elPhaseSeconds = must("phaseSeconds");
 const restartBtn = must("restartBtn");
 const pauseBtn = must("pauseBtn");
 
-// SVG progress path (ВАЖНО: в HTML должен быть path/rect с id="squareProgress")
+// phase container (for future text animations, optional)
+const phaseBox = document.querySelector(".phase");
+
+// SVG progress
 const squareProgress = must("squareProgress");
 
-// SVG progress metrics
+// ensure we can animate reset opacity via CSS class (optional)
+// if you don't have CSS yet, you can add:
+// #squareProgress{ transition: opacity 180ms ease; }
+// #squareProgress.is-resetting{ opacity: 0; }
 let totalLen = 0;
 let segmentLen = 0;
 
@@ -128,22 +129,15 @@ function initSvgProgress() {
   totalLen = squareProgress.getTotalLength();
   segmentLen = totalLen / 4;
 
-  // базово "ничего не рисуем"
-  squareProgress.style.strokeDasharray = `0 ${totalLen}`;
-  squareProgress.style.strokeDashoffset = "0";
+  // cumulative progress: line grows from 0 to totalLen
+  squareProgress.style.strokeDasharray = String(totalLen);
+  squareProgress.style.strokeDashoffset = String(totalLen); // 0 progress
 }
-
 initSvgProgress();
 
-// Рисуем только 1 сторону (¼ контура) в рамках текущей фазы.
-// stepIdx: 0..3, t01: 0..1
-function setSideProgress(stepIdx, t01) {
-  const t = Math.max(0, Math.min(1, t01));
-  const visible = segmentLen * t;
-
-  squareProgress.style.strokeDasharray = `${visible} ${totalLen}`;
-  // отрицательный offset двигает "окно" дальше по контуру
-  squareProgress.style.strokeDashoffset = String(-segmentLen * stepIdx);
+function setCumulativeProgress(len) {
+  const L = Math.max(0, Math.min(totalLen, len));
+  squareProgress.style.strokeDashoffset = String(totalLen - L);
 }
 
 // state
@@ -180,9 +174,7 @@ function render() {
     elCountdown.textContent = String(countdownLeft);
     pauseBtn.textContent = "Пауза";
 
-    // на отсчёте не рисуем прогресс
-    setSideProgress(0, 0);
-
+    setCumulativeProgress(0);
     paused = false;
     return;
   }
@@ -201,7 +193,7 @@ function startRaf() {
 
   const tick = (now) => {
     if (mode !== "breathing") {
-      setSideProgress(0, 0);
+      setCumulativeProgress(0);
       stopRaf();
       return;
     }
@@ -209,8 +201,11 @@ function startRaf() {
     if (!paused) {
       const duration = SQUARE_FLOW[stepIndex].seconds * 1000;
       const elapsed = now - stepStartedAt - pausedTotal;
-      const t = elapsed / duration; // 0..1
-      setSideProgress(stepIndex, t);
+      const t = Math.max(0, Math.min(1, elapsed / duration));
+
+      // cumulative length: completed segments + current segment progress
+      const len = segmentLen * (stepIndex + t);
+      setCumulativeProgress(len);
     }
 
     rafId = requestAnimationFrame(tick);
@@ -219,13 +214,22 @@ function startRaf() {
   rafId = requestAnimationFrame(tick);
 }
 
+function softResetProgress() {
+  // fade-out -> reset -> fade-in
+  squareProgress.classList.add("is-resetting");
+  setTimeout(() => {
+    setCumulativeProgress(0);
+    squareProgress.classList.remove("is-resetting");
+  }, 180);
+}
+
 function startCountdown() {
   mode = "countdown";
   countdownLeft = 3;
 
   clearTimer();
   stopRaf();
-  setSideProgress(0, 0);
+  setCumulativeProgress(0);
 
   render();
 
@@ -251,7 +255,7 @@ function startBreathing() {
 
   clearTimer();
   render();
-  setSideProgress(stepIndex, 0);
+  setCumulativeProgress(0);
   startRaf();
 
   timerId = setInterval(() => {
@@ -261,6 +265,8 @@ function startBreathing() {
     secondsLeft -= 1;
 
     if (secondsLeft <= 0) {
+      const prevIndex = stepIndex;
+
       stepIndex = (stepIndex + 1) % SQUARE_FLOW.length;
       secondsLeft = SQUARE_FLOW[stepIndex].seconds;
 
@@ -269,7 +275,13 @@ function startBreathing() {
       stepStartedAt = performance.now();
       pausedTotal = 0;
 
-      setSideProgress(stepIndex, 0);
+      // if we wrapped from last -> first, softly reset the line
+      if (prevIndex === SQUARE_FLOW.length - 1 && stepIndex === 0) {
+        softResetProgress();
+      }
+
+      render();
+      return;
     }
 
     render();
@@ -293,6 +305,7 @@ pauseBtn.addEventListener("click", () => {
 });
 
 restartBtn.addEventListener("click", () => {
+  // On restart: also reset progress visibility and timers
   startCountdown();
 });
 
