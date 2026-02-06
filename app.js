@@ -44,6 +44,11 @@ function applyTelegramTheme() {
   document.documentElement.style.setProperty("--segBg", isDark ? "rgba(255,255,255,0.10)" : "#f1f5f9");
   document.documentElement.style.setProperty("--segText", isDark ? "rgba(255,255,255,0.92)" : "#334155");
   document.documentElement.style.setProperty("--segDisabledText", isDark ? "rgba(255,255,255,0.55)" : "rgba(51,65,85,0.45)");
+  // цвет цифр внутри квадрата (секунды)
+document.documentElement.style.setProperty(
+  "--counter",
+  isDark ? "rgba(255,255,255,0.65)" : "rgba(15,23,42,0.55)"
+);
 }
 
 function initTelegram() {
