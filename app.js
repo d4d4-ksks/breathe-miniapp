@@ -6,13 +6,14 @@ const must = (id) => {
   return el;
 };
 
-// --- Telegram WebApp integration (если не в Telegram — просто пропустится) ---
+// --- Telegram WebApp integration ---
 const tg = window.Telegram?.WebApp;
 
 function applyTelegramTheme() {
   if (!tg) return;
 
   const p = tg.themeParams || {};
+
   const bg = p.bg_color || "#ffffff";
   const text = p.text_color || "#0f172a";
   const hint = p.hint_color || "#64748b";
@@ -20,35 +21,68 @@ function applyTelegramTheme() {
   const btn = p.button_color || link || "#2563eb";
   const btnText = p.button_text_color || "#ffffff";
 
+  // helpers for "isDark"
+  const hexToRgb = (hex) => {
+    const h = String(hex).replace("#", "").trim();
+    const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+    const n = parseInt(full, 16);
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+  };
+
+  const luminance = ({ r, g, b }) => {
+    const toLin = (v) => {
+      v /= 255;
+      return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    };
+    const R = toLin(r), G = toLin(g), B = toLin(b);
+    return 0.2126 * R + 0.7152 * G + 0.0722 * B;
+  };
+
+  let isDark = false;
+  try {
+    isDark = luminance(hexToRgb(bg)) < 0.35;
+  } catch (e) {
+    isDark = false;
+  }
+
+  // safe text/hint
+  let safeText = text;
+  let safeMuted = hint;
+  try {
+    const textLum = luminance(hexToRgb(text));
+    const hintLum = luminance(hexToRgb(hint));
+    if (isDark && textLum < 0.55) safeText = "#ffffff";
+    if (isDark && hintLum < 0.45) safeMuted = "rgba(255,255,255,0.7)";
+  } catch (e) {
+    if (isDark) {
+      safeText = "#ffffff";
+      safeMuted = "rgba(255,255,255,0.7)";
+    }
+  }
+
   document.documentElement.style.setProperty("--bg", bg);
-  document.documentElement.style.setProperty("--text", text);
-  document.documentElement.style.setProperty("--muted", hint);
+  document.documentElement.style.setProperty("--text", safeText);
+  document.documentElement.style.setProperty("--muted", safeMuted);
   document.documentElement.style.setProperty("--accent", link);
   document.documentElement.style.setProperty("--button", btn);
   document.documentElement.style.setProperty("--buttonText", btnText);
 
   // segmented (чтобы disabled не сливался)
-  // определяем тёмный фон грубо по строке: если фон почти чёрный — считаем dark
-  // (можно усложнять, но для UI достаточно)
-  const isDark = typeof bg === "string" && bg.toLowerCase().startsWith("#")
-    ? (() => {
-        const h = bg.replace("#", "");
-        const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
-        const n = parseInt(full, 16);
-        const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
-        const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-        return lum < 0.35;
-      })()
-    : false;
-
   document.documentElement.style.setProperty("--segBg", isDark ? "rgba(255,255,255,0.10)" : "#f1f5f9");
   document.documentElement.style.setProperty("--segText", isDark ? "rgba(255,255,255,0.92)" : "#334155");
   document.documentElement.style.setProperty("--segDisabledText", isDark ? "rgba(255,255,255,0.55)" : "rgba(51,65,85,0.45)");
-  // цвет цифр внутри квадрата (секунды)
-document.documentElement.style.setProperty(
-  "--counter",
-  isDark ? "rgba(255,255,255,0.65)" : "rgba(15,23,42,0.55)"
-);
+
+  // фон квадрата
+  document.documentElement.style.setProperty(
+    "--square-bg",
+    isDark ? "rgba(255,255,255,0.25)" : "rgba(15,23,42,0.12)"
+  );
+
+  // цифры секунд внутри квадрата
+  document.documentElement.style.setProperty(
+    "--counter",
+    isDark ? "rgba(255,255,255,0.65)" : "rgba(15,23,42,0.55)"
+  );
 }
 
 function initTelegram() {
@@ -83,31 +117,47 @@ const elPhaseSeconds = must("phaseSeconds");
 const restartBtn = must("restartBtn");
 const pauseBtn = must("pauseBtn");
 
-// SVG progress element (обязательно должен быть в HTML)
+// SVG progress path (ВАЖНО: в HTML должен быть path/rect с id="squareProgress")
 const squareProgress = must("squareProgress");
 
-let progressLen = 0; // длина контура
+// SVG progress metrics
+let totalLen = 0;
+let segmentLen = 0;
 
 function initSvgProgress() {
-  // для rect/path работает getTotalLength()
-  progressLen = squareProgress.getTotalLength();
-  squareProgress.style.strokeDasharray = String(progressLen);
-  squareProgress.style.strokeDashoffset = String(progressLen); // 0% прогресса
+  totalLen = squareProgress.getTotalLength();
+  segmentLen = totalLen / 4;
+
+  // базово "ничего не рисуем"
+  squareProgress.style.strokeDasharray = `0 ${totalLen}`;
+  squareProgress.style.strokeDashoffset = "0";
 }
+
 initSvgProgress();
+
+// Рисуем только 1 сторону (¼ контура) в рамках текущей фазы.
+// stepIdx: 0..3, t01: 0..1
+function setSideProgress(stepIdx, t01) {
+  const t = Math.max(0, Math.min(1, t01));
+  const visible = segmentLen * t;
+
+  squareProgress.style.strokeDasharray = `${visible} ${totalLen}`;
+  // отрицательный offset двигает "окно" дальше по контуру
+  squareProgress.style.strokeDashoffset = String(-segmentLen * stepIdx);
+}
 
 // state
 let mode = "countdown"; // "countdown" | "breathing"
 let countdownLeft = 3;
 
-let stepIndex = 0;      // 0..3
+let stepIndex = 0;
 let secondsLeft = SQUARE_FLOW[0].seconds;
 
-let timerId = null;     // 1s ticks
-let rafId = null;       // smooth ticks
+let timerId = null; // 1s tick
+let rafId = null;   // smooth tick
 let paused = false;
 
-let stepStartedAt = 0;  // performance.now()
+let stepStartedAt = 0; // performance.now()
 let pausedAt = 0;
 let pausedTotal = 0;
 
@@ -123,13 +173,6 @@ function stopRaf() {
   rafId = null;
 }
 
-function setProgress01(p01) {
-  // p01: 0..1
-  const p = Math.max(0, Math.min(1, p01));
-  const offset = progressLen * (1 - p);
-  squareProgress.style.strokeDashoffset = String(offset);
-}
-
 function render() {
   if (mode === "countdown") {
     elCountdown.hidden = false;
@@ -137,8 +180,9 @@ function render() {
     elCountdown.textContent = String(countdownLeft);
     pauseBtn.textContent = "Пауза";
 
-    // на отсчёте прячем прогресс
-    setProgress01(0);
+    // на отсчёте не рисуем прогресс
+    setSideProgress(0, 0);
+
     paused = false;
     return;
   }
@@ -149,7 +193,6 @@ function render() {
   const step = SQUARE_FLOW[stepIndex];
   elPhaseTitle.textContent = step.label;
   elPhaseSeconds.textContent = String(secondsLeft);
-
   pauseBtn.textContent = paused ? "Продолжить" : "Пауза";
 }
 
@@ -158,22 +201,16 @@ function startRaf() {
 
   const tick = (now) => {
     if (mode !== "breathing") {
-      setProgress01(0);
+      setSideProgress(0, 0);
       stopRaf();
       return;
     }
 
-    const step = SQUARE_FLOW[stepIndex];
-    const duration = step.seconds * 1000;
-
     if (!paused) {
+      const duration = SQUARE_FLOW[stepIndex].seconds * 1000;
       const elapsed = now - stepStartedAt - pausedTotal;
-      const t = elapsed / duration; // 0..1 в рамках текущей фазы
-
-      // общий прогресс по квадрату: (фаза + прогресс в фазе) / 4
-      // 0..1, потом по кругу (мы сбрасываем на 0 при новом цикле)
-      const total = (stepIndex + Math.max(0, Math.min(1, t))) / SQUARE_FLOW.length;
-      setProgress01(total);
+      const t = elapsed / duration; // 0..1
+      setSideProgress(stepIndex, t);
     }
 
     rafId = requestAnimationFrame(tick);
@@ -183,18 +220,17 @@ function startRaf() {
 }
 
 function startCountdown() {
-  document.body.classList.remove("is-breathing");
   mode = "countdown";
   countdownLeft = 3;
 
   clearTimer();
   stopRaf();
-  setProgress01(0);
+  setSideProgress(0, 0);
+
   render();
 
   timerId = setInterval(() => {
     countdownLeft -= 1;
-
     if (countdownLeft <= 0) {
       startBreathing();
       return;
@@ -204,7 +240,6 @@ function startCountdown() {
 }
 
 function startBreathing() {
-  document.body.classList.add("is-breathing");
   mode = "breathing";
 
   stepIndex = 0;
@@ -216,6 +251,7 @@ function startBreathing() {
 
   clearTimer();
   render();
+  setSideProgress(stepIndex, 0);
   startRaf();
 
   timerId = setInterval(() => {
@@ -225,18 +261,15 @@ function startBreathing() {
     secondsLeft -= 1;
 
     if (secondsLeft <= 0) {
-      // переход на следующую фазу
       stepIndex = (stepIndex + 1) % SQUARE_FLOW.length;
       secondsLeft = SQUARE_FLOW[stepIndex].seconds;
 
       haptic("soft");
 
-      // новый старт для плавного прогресса
       stepStartedAt = performance.now();
       pausedTotal = 0;
 
-      // если начался новый цикл — сбросить контур на 0
-      if (stepIndex === 0) setProgress01(0);
+      setSideProgress(stepIndex, 0);
     }
 
     render();
@@ -247,6 +280,7 @@ pauseBtn.addEventListener("click", () => {
   if (mode !== "breathing") return;
 
   const now = performance.now();
+
   if (!paused) {
     paused = true;
     pausedAt = now;
@@ -254,6 +288,7 @@ pauseBtn.addEventListener("click", () => {
     paused = false;
     pausedTotal += (now - pausedAt);
   }
+
   render();
 });
 
@@ -261,5 +296,5 @@ restartBtn.addEventListener("click", () => {
   startCountdown();
 });
 
-// автостарт
+// auto start on open
 startCountdown();
