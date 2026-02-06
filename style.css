@@ -65,21 +65,6 @@ body {
   line-height: 1;
 }
 
-.squareCard{
-  width: min(360px, 100%);
-  display: grid;
-  place-items: center;
-  gap: 14px;
-}
-
-.square{
-  width: 240px;
-  height: 240px;
-  border: 10px solid #e2e8f0;
-  border-radius: 18px;
-  position: relative;
-}
-
 .phase{
   display: grid;
   place-items: center;
@@ -213,7 +198,13 @@ body {
 }
 .progressLayer { z-index: 1; }
 
+/* прогресс скрыт, пока не breathing */
+#squareProgress { opacity: 0; }
+body.is-breathing #squareProgress { opacity: 1; }
+
 .squareSvg {
+  width: 240px;
+  height: 240px;
   display: block;
 }
 
@@ -222,4 +213,10 @@ body {
   width: 240px;
   height: 240px;
   margin: 0 auto;
+}
+.squareCard{
+  width: min(360px, 100%);
+  display: grid;
+  place-items: center;
+  gap: 14px;
 }
