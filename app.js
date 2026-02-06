@@ -178,6 +178,7 @@ function startRaf() {
 }
 
 function startCountdown() {
+  document.body.classList.remove("is-breathing");
   mode = "countdown";
   countdownLeft = 3;
 
@@ -198,6 +199,7 @@ function startCountdown() {
 }
 
 function startBreathing() {
+  document.body.classList.add("is-breathing");
   mode = "breathing";
 
   stepIndex = 0;
