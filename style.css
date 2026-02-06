@@ -205,9 +205,6 @@ body.is-dark{
 }
 .progressLayer { z-index: 1; }
 
-/* прогресс скрыт, пока не breathing */
-#squareProgress { opacity: 0; }
-body.is-breathing #squareProgress { opacity: 1; }
 
 .squareSvg {
   width: 240px;
