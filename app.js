@@ -21,7 +21,6 @@ function applyTelegramTheme() {
   const btn = p.button_color || link || "#2563eb";
   const btnText = p.button_text_color || "#ffffff";
 
-  // helpers
   const hexToRgb = (hex) => {
     const h = String(hex).replace("#", "").trim();
     const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
@@ -45,7 +44,6 @@ function applyTelegramTheme() {
     isDark = false;
   }
 
-  // safe text/hint on dark backgrounds
   let safeText = text;
   let safeMuted = hint;
 
@@ -68,15 +66,11 @@ function applyTelegramTheme() {
   document.documentElement.style.setProperty("--button", btn);
   document.documentElement.style.setProperty("--buttonText", btnText);
 
-  // segmented colors
   document.documentElement.style.setProperty("--segBg", isDark ? "rgba(255,255,255,0.10)" : "#f1f5f9");
   document.documentElement.style.setProperty("--segText", isDark ? "rgba(255,255,255,0.92)" : "#334155");
   document.documentElement.style.setProperty("--segDisabledText", isDark ? "rgba(255,255,255,0.55)" : "rgba(51,65,85,0.45)");
 
-  // square base stroke
   document.documentElement.style.setProperty("--square-bg", isDark ? "rgba(255,255,255,0.25)" : "rgba(15,23,42,0.12)");
-
-  // light-gray seconds inside square
   document.documentElement.style.setProperty("--counter", isDark ? "rgba(255,255,255,0.65)" : "rgba(15,23,42,0.55)");
 }
 
@@ -88,7 +82,6 @@ function initTelegram() {
   tg.onEvent?.("themeChanged", applyTelegramTheme);
   document.body.style.webkitTapHighlightColor = "transparent";
 }
-
 initTelegram();
 
 // --- haptic ---
@@ -96,15 +89,7 @@ function haptic(type = "soft") {
   window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.(type);
 }
 
-// --- flow ---
-const SQUARE_FLOW = [
-  { key: "inhale", label: "Вдох", seconds: 4 },
-  { key: "hold1",  label: "Задержка", seconds: 4 },
-  { key: "exhale", label: "Выдох", seconds: 4 },
-  { key: "hold2",  label: "Задержка", seconds: 4 },
-];
-
-// UI
+// --- UI ---
 const elCountdown = must("countdown");
 const elSquareCard = must("squareCard");
 const elPhaseTitle = must("phaseTitle");
@@ -112,44 +97,108 @@ const elPhaseSeconds = must("phaseSeconds");
 const restartBtn = must("restartBtn");
 const pauseBtn = must("pauseBtn");
 
-// phase container (for text animations)
+const tabSquare = must("tabSquare");
+const tab478 = must("tab478");
+
+// For text animations
 const phaseBox = document.querySelector(".phase.phase-inSquare");
-console.log("phaseBox found:", !!phaseBox);
 
-
-// SVG progress
+// SVG progress elements (оба должны быть в DOM)
 const squareProgress = must("squareProgress");
+const circleProgress = must("circleProgress");
 
-// If you want smooth fade reset, add in CSS:
-// #squareProgress{ transition: opacity 180ms ease; }
-// #squareProgress.is-resetting{ opacity: 0; }
-let totalLen = 0;
-let segmentLen = 0;
+// --- Patterns ---
+const PATTERNS = {
+  square: {
+    key: "square",
+    label: "Квадрат",
+    flow: [
+      { key: "inhale", label: "Вдох", seconds: 4 },
+      { key: "hold1",  label: "Задержка", seconds: 4 },
+      { key: "exhale", label: "Выдох", seconds: 4 },
+      { key: "hold2",  label: "Задержка", seconds: 4 },
+    ],
+  },
+  "478": {
+    key: "478",
+    label: "4-7-8",
+    flow: [
+      { key: "inhale", label: "Вдох", seconds: 4 },
+      { key: "hold",   label: "Задержка", seconds: 7 },
+      { key: "exhale", label: "Выдох", seconds: 8 },
+    ],
+  },
+};
 
-function initSvgProgress() {
-  totalLen = squareProgress.getTotalLength();
-  segmentLen = totalLen / 4;
+let patternKey = "square";
+let FLOW = PATTERNS[patternKey].flow;
 
-  // cumulative progress: line grows from 0 to totalLen
-  squareProgress.style.strokeDasharray = String(totalLen);
-  squareProgress.style.strokeDashoffset = String(totalLen); // 0 progress
+// --- Progress renderers (square & circle) ---
+let squareTotalLen = 0;
+let squareSegmentLen = 0;
+
+let circleTotalLen = 0;
+let circleSegmentLens = []; // per-step segment lengths proportional to step duration
+
+function initSquareProgress() {
+  squareTotalLen = squareProgress.getTotalLength();
+  squareSegmentLen = squareTotalLen / 4; // square has 4 equal phases
+
+  squareProgress.style.strokeDasharray = String(squareTotalLen);
+  squareProgress.style.strokeDashoffset = String(squareTotalLen);
 }
-initSvgProgress();
 
-function setCumulativeProgress(len) {
-  const L = Math.max(0, Math.min(totalLen, len));
-  squareProgress.style.strokeDashoffset = String(totalLen - L);
+function initCircleProgress() {
+  circleTotalLen = circleProgress.getTotalLength();
+  circleProgress.style.strokeDasharray = String(circleTotalLen);
+  circleProgress.style.strokeDashoffset = String(circleTotalLen);
 }
 
-// text animations
+initSquareProgress();
+initCircleProgress();
+
+function setCumulativeProgressForCurrentPattern(stepIndex, t01) {
+  const t = Math.max(0, Math.min(1, t01));
+
+  if (patternKey === "square") {
+    // 4 равные четверти
+    const len = squareSegmentLen * (stepIndex + t);
+    const L = Math.max(0, Math.min(squareTotalLen, len));
+    squareProgress.style.strokeDashoffset = String(squareTotalLen - L);
+    // circle reset to 0
+    circleProgress.style.strokeDashoffset = String(circleTotalLen);
+    return;
+  }
+
+  // 4-7-8: сегменты пропорциональны длительности
+  // считаем cumulativeLen = sum(prev segments) + currentSegment * t
+  const totalDur = FLOW.reduce((acc, s) => acc + s.seconds, 0);
+  // пересчитываем segmentLens, если нужно
+  if (circleSegmentLens.length !== FLOW.length) {
+    circleSegmentLens = FLOW.map((s) => (circleTotalLen * s.seconds) / totalDur);
+  }
+
+  let base = 0;
+  for (let i = 0; i < stepIndex; i++) base += circleSegmentLens[i];
+  const len = base + circleSegmentLens[stepIndex] * t;
+  const L = Math.max(0, Math.min(circleTotalLen, len));
+  circleProgress.style.strokeDashoffset = String(circleTotalLen - L);
+  // square reset to 0
+  squareProgress.style.strokeDashoffset = String(squareTotalLen);
+}
+
+function resetProgressNow() {
+  squareProgress.style.strokeDashoffset = String(squareTotalLen);
+  circleProgress.style.strokeDashoffset = String(circleTotalLen);
+}
+
+// --- Animations (text) ---
 function animatePhaseTextChange() {
   if (!phaseBox) {
     render();
     return;
   }
-
   phaseBox.classList.add("is-fading");
-  // short fade-out, then update, then fade-in via CSS transition
   setTimeout(() => {
     render();
     phaseBox.classList.remove("is-fading");
@@ -157,24 +206,23 @@ function animatePhaseTextChange() {
 }
 
 function animateSecondTick() {
-  // pulse only the seconds
   elPhaseSeconds.classList.remove("is-ticking");
-  void elPhaseSeconds.offsetWidth; // restart animation
+  void elPhaseSeconds.offsetWidth;
   elPhaseSeconds.classList.add("is-ticking");
 }
 
-// state
-let mode = "countdown"; // "countdown" | "breathing"
+// --- State machine ---
+let mode = "countdown"; // countdown | breathing
 let countdownLeft = 3;
 
 let stepIndex = 0;
-let secondsLeft = SQUARE_FLOW[0].seconds;
+let secondsLeft = FLOW[0].seconds;
 
-let timerId = null; // 1s tick
-let rafId = null;   // smooth tick
+let timerId = null;
+let rafId = null;
 let paused = false;
 
-let stepStartedAt = 0; // performance.now()
+let stepStartedAt = 0;
 let pausedAt = 0;
 let pausedTotal = 0;
 
@@ -184,22 +232,27 @@ function clearTimer() {
     timerId = null;
   }
 }
-
 function stopRaf() {
   if (rafId) cancelAnimationFrame(rafId);
   rafId = null;
 }
 
 function render() {
+  // tabs visual state
+  tabSquare.classList.toggle("active", patternKey === "square");
+  tabSquare.setAttribute("aria-selected", patternKey === "square" ? "true" : "false");
+  tab478.classList.toggle("active", patternKey === "478");
+  tab478.setAttribute("aria-selected", patternKey === "478" ? "true" : "false");
+
+  // body mode for CSS (показываем нужную фигуру)
+  document.body.classList.toggle("mode-478", patternKey === "478");
+
   if (mode === "countdown") {
     elCountdown.hidden = false;
     elSquareCard.hidden = true;
     elCountdown.textContent = String(countdownLeft);
     pauseBtn.textContent = "Пауза";
-
-    setCumulativeProgress(0);
-
-    // remove tick animation class during countdown
+    resetProgressNow();
     elPhaseSeconds.classList.remove("is-ticking");
     paused = false;
     return;
@@ -208,7 +261,7 @@ function render() {
   elCountdown.hidden = true;
   elSquareCard.hidden = false;
 
-  const step = SQUARE_FLOW[stepIndex];
+  const step = FLOW[stepIndex];
   elPhaseTitle.textContent = step.label;
   elPhaseSeconds.textContent = String(secondsLeft);
   pauseBtn.textContent = paused ? "Продолжить" : "Пауза";
@@ -219,19 +272,16 @@ function startRaf() {
 
   const tick = (now) => {
     if (mode !== "breathing") {
-      setCumulativeProgress(0);
+      resetProgressNow();
       stopRaf();
       return;
     }
 
     if (!paused) {
-      const duration = SQUARE_FLOW[stepIndex].seconds * 1000;
+      const duration = FLOW[stepIndex].seconds * 1000;
       const elapsed = now - stepStartedAt - pausedTotal;
-      const t = Math.max(0, Math.min(1, elapsed / duration));
-
-      // cumulative length: completed segments + current segment progress
-      const len = segmentLen * (stepIndex + t);
-      setCumulativeProgress(len);
+      const t = elapsed / duration;
+      setCumulativeProgressForCurrentPattern(stepIndex, t);
     }
 
     rafId = requestAnimationFrame(tick);
@@ -241,10 +291,14 @@ function startRaf() {
 }
 
 function softResetProgress() {
-  squareProgress.classList.add("is-resetting");
+  // если у тебя есть CSS:
+  // #squareProgress, #circleProgress { transition: opacity 180ms ease; }
+  // .is-resetting { opacity: 0; }
+  const el = patternKey === "square" ? squareProgress : circleProgress;
+  el.classList.add("is-resetting");
   setTimeout(() => {
-    setCumulativeProgress(0);
-    squareProgress.classList.remove("is-resetting");
+    resetProgressNow();
+    el.classList.remove("is-resetting");
   }, 180);
 }
 
@@ -254,8 +308,7 @@ function startCountdown() {
 
   clearTimer();
   stopRaf();
-  setCumulativeProgress(0);
-
+  resetProgressNow();
   render();
 
   timerId = setInterval(() => {
@@ -272,7 +325,7 @@ function startBreathing() {
   mode = "breathing";
 
   stepIndex = 0;
-  secondsLeft = SQUARE_FLOW[0].seconds;
+  secondsLeft = FLOW[0].seconds;
 
   paused = false;
   pausedTotal = 0;
@@ -280,10 +333,8 @@ function startBreathing() {
 
   clearTimer();
   render();
-  setCumulativeProgress(0);
+  resetProgressNow();
   startRaf();
-
-  // initial tick pulse (optional)
   animateSecondTick();
 
   timerId = setInterval(() => {
@@ -295,29 +346,44 @@ function startBreathing() {
     if (secondsLeft <= 0) {
       const prevIndex = stepIndex;
 
-      stepIndex = (stepIndex + 1) % SQUARE_FLOW.length;
-      secondsLeft = SQUARE_FLOW[stepIndex].seconds;
+      stepIndex = (stepIndex + 1) % FLOW.length;
+      secondsLeft = FLOW[stepIndex].seconds;
 
       haptic("soft");
 
       stepStartedAt = performance.now();
       pausedTotal = 0;
 
-      // if we wrapped from last -> first, softly reset the line
-      if (prevIndex === SQUARE_FLOW.length - 1 && stepIndex === 0) {
+      // wrapped to start
+      if (prevIndex === FLOW.length - 1 && stepIndex === 0) {
         softResetProgress();
       }
 
-      // smooth phase text change
       animatePhaseTextChange();
       return;
     }
 
-    // normal second tick
     render();
     animateSecondTick();
   }, 1000);
 }
+
+function setPattern(nextKey) {
+  if (nextKey === patternKey) return;
+
+  patternKey = nextKey;
+  FLOW = PATTERNS[patternKey].flow;
+
+  // reset circle segment lens cache
+  circleSegmentLens = [];
+
+  // restart flow from countdown
+  startCountdown();
+}
+
+// --- Events ---
+tabSquare.addEventListener("click", () => setPattern("square"));
+tab478.addEventListener("click", () => setPattern("478"));
 
 pauseBtn.addEventListener("click", () => {
   if (mode !== "breathing") return;
@@ -327,15 +393,12 @@ pauseBtn.addEventListener("click", () => {
   if (!paused) {
     paused = true;
     pausedAt = now;
-    // stop tick pulse while paused
     elPhaseSeconds.classList.remove("is-ticking");
   } else {
     paused = false;
     pausedTotal += (now - pausedAt);
-    // resume pulse on resume
     animateSecondTick();
   }
-
   render();
 });
 
@@ -343,5 +406,5 @@ restartBtn.addEventListener("click", () => {
   startCountdown();
 });
 
-// auto start on open
+// auto start
 startCountdown();
