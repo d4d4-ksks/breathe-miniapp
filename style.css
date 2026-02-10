@@ -315,20 +315,21 @@ body.mode-478 .circleOnly { display: block; }
   opacity: 1;
 }
 .circleOnly{
-  transform-origin: 50% 50%;
+  /* iOS WebView: без transform-box transform на SVG может не работать */
+  transform-box: fill-box;
+  transform-origin: center;
+
+  -webkit-transform-box: fill-box;
+  -webkit-transform-origin: center;
+
   transition: transform 900ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.circle-state-inhale{
-  transform: scale(1);
+  -webkit-transition: -webkit-transform 900ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.circle-state-hold{
-  transform: scale(1.035);
-}
+.circle-state-inhale{ transform: scale(1); -webkit-transform: scale(1); }
+.circle-state-hold{ transform: scale(1.035); -webkit-transform: scale(1.035); }
+.circle-state-exhale{ transform: scale(0.97); -webkit-transform: scale(0.97); }
 
-.circle-state-exhale{
-  transform: scale(0.97);
-}
 .circle-breath-in{
   transform: scale(1.035);
 }
