@@ -154,10 +154,13 @@ function initSquareProgress() {
 }
 
 function initCircleProgress() {
-  circleTotalLen = circleProgress.getTotalLength();
+  const r = parseFloat(circleProgress.getAttribute("r") || "0");
+  circleTotalLen = 2 * Math.PI * r;
+
   circleProgress.style.strokeDasharray = String(circleTotalLen);
   circleProgress.style.strokeDashoffset = String(circleTotalLen);
 }
+
 
 initSquareProgress();
 initCircleProgress();
