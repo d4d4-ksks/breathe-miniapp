@@ -292,4 +292,9 @@ body.is-dark{
   to   { transform: scale(1); }
 }
 .phaseSeconds, .countdown { font-variant-numeric: tabular-nums; }
+.squareOnly { display: block; }
+.circleOnly { display: none; }
+
+body.mode-478 .squareOnly { display: none; }
+body.mode-478 .circleOnly { display: block; }
 
