@@ -44,9 +44,9 @@ function applyTelegramTheme() {
     isDark = false;
   }
 
-  // Safe text/hint
   let safeText = text;
   let safeMuted = hint;
+
   try {
     const textLum = luminance(hexToRgb(text));
     const hintLum = luminance(hexToRgb(hint));
@@ -66,15 +66,11 @@ function applyTelegramTheme() {
   document.documentElement.style.setProperty("--button", btn);
   document.documentElement.style.setProperty("--buttonText", btnText);
 
-  // segmented colors
   document.documentElement.style.setProperty("--segBg", isDark ? "rgba(255,255,255,0.10)" : "#f1f5f9");
   document.documentElement.style.setProperty("--segText", isDark ? "rgba(255,255,255,0.92)" : "#334155");
   document.documentElement.style.setProperty("--segDisabledText", isDark ? "rgba(255,255,255,0.55)" : "rgba(51,65,85,0.45)");
 
-  // square/circle base stroke
   document.documentElement.style.setProperty("--square-bg", isDark ? "rgba(255,255,255,0.25)" : "rgba(15,23,42,0.12)");
-
-  // seconds inside figure
   document.documentElement.style.setProperty("--counter", isDark ? "rgba(255,255,255,0.65)" : "rgba(15,23,42,0.55)");
 }
 
@@ -108,10 +104,9 @@ const tab478 = must("tab478");
 const subSquare = must("subSquare");
 const sub478 = must("sub478");
 
-// Phase container (for text animations)
 const phaseBox = document.querySelector(".phase.phase-inSquare");
 
-// Figures (SVG progress)
+// Progress elements
 const squareProgress = must("squareProgress");
 const circleProgress = must("circleProgress");
 
@@ -140,11 +135,12 @@ let patternKey = "square";
 let FLOW = PATTERNS[patternKey].flow;
 
 // --- Progress math ---
+// Square: cumulative by quarters
 let squareTotalLen = 0;
 let squareSegmentLen = 0;
 
-let circleTotalLen = 0;
-let circleSegmentLens = []; // recalculated when flow changes
+// Circle: normalized via pathLength="100"
+let circleTotalLen = 100;
 
 function initSquareProgress() {
   squareTotalLen = squareProgress.getTotalLength();
@@ -154,54 +150,40 @@ function initSquareProgress() {
 }
 
 function initCircleProgress() {
-  circleTotalLen = 100; // потому что pathLength="100"
+  // IMPORTANT: circleProgress must have pathLength="100" in HTML
+  circleTotalLen = 100;
   circleProgress.style.strokeDasharray = String(circleTotalLen);
   circleProgress.style.strokeDashoffset = String(circleTotalLen);
 }
 
-
 initSquareProgress();
 initCircleProgress();
 
-function resetProgressNow() {
+function hideSquareProgress() {
   squareProgress.style.strokeDashoffset = String(squareTotalLen);
+}
+
+function hideCircleProgress() {
   circleProgress.style.strokeDashoffset = String(circleTotalLen);
 }
 
-function setSquareCumulative(stepIndex, t01) {
+function resetProgressNow() {
+  hideSquareProgress();
+  hideCircleProgress();
+}
+
+function setSquareCumulative(stepIdx, t01) {
   const t = Math.max(0, Math.min(1, t01));
-  const len = squareSegmentLen * (stepIndex + t);
+  const len = squareSegmentLen * (stepIdx + t);
   const L = Math.max(0, Math.min(squareTotalLen, len));
   squareProgress.style.strokeDashoffset = String(squareTotalLen - L);
 }
 
-function ensureCircleSegmentLens() {
-  const totalDur = FLOW.reduce((acc, s) => acc + s.seconds, 0);
-  circleSegmentLens = FLOW.map((s) => (circleTotalLen * s.seconds) / totalDur);
-}
-
-function setCircleCumulative(stepIndex, t01) {
-  const t = Math.max(0, Math.min(1, t01));
-  if (circleSegmentLens.length !== FLOW.length) ensureCircleSegmentLens();
-
-  let base = 0;
-  for (let i = 0; i < stepIndex; i++) base += circleSegmentLens[i];
-
-  const len = base + circleSegmentLens[stepIndex] * t;
-  const L = Math.max(0, Math.min(circleTotalLen, len));
-  circleProgress.style.strokeDashoffset = String(circleTotalLen - L);
-}
-
-function setCumulativeProgress(stepIndex, t01) {
-  if (patternKey === "square") {
-    setSquareCumulative(stepIndex, t01);
-    // hide circle progress
-    circleProgress.style.strokeDashoffset = String(circleTotalLen);
-  } else {
-    setCircleCumulative(stepIndex, t01);
-    // hide square progress
-    squareProgress.style.strokeDashoffset = String(squareTotalLen);
-  }
+function setCircleCumulative01(p01) {
+  const p = Math.max(0, Math.min(1, p01));
+  // dashoffset: 100 -> 0 as progress increases
+  const off = circleTotalLen - circleTotalLen * p;
+  circleProgress.style.strokeDashoffset = String(off);
 }
 
 function softResetProgress() {
@@ -253,13 +235,16 @@ let countdownLeft = 3;
 let stepIndex = 0;
 let secondsLeft = FLOW[0].seconds;
 
-let timerId = null; // 1s
-let rafId = null;   // smooth progress
+let timerId = null;
+let rafId = null;
 let paused = false;
 
 let stepStartedAt = 0;
 let pausedAt = 0;
 let pausedTotal = 0;
+
+// For 4-7-8 circle progress speed (full cycle = 19s)
+let cycleStartedAt = 0;
 
 function clearTimer() {
   if (timerId) {
@@ -271,6 +256,10 @@ function clearTimer() {
 function stopRaf() {
   if (rafId) cancelAnimationFrame(rafId);
   rafId = null;
+}
+
+function getCycleTotalMs() {
+  return FLOW.reduce((acc, s) => acc + s.seconds * 1000, 0);
 }
 
 function render() {
@@ -285,7 +274,7 @@ function render() {
   subSquare.classList.toggle("active", patternKey === "square");
   sub478.classList.toggle("active", patternKey === "478");
 
-  // Body mode for CSS (show square/circle)
+  // Show correct figure via CSS
   document.body.classList.toggle("mode-478", patternKey === "478");
 
   if (mode === "countdown") {
@@ -322,10 +311,22 @@ function startRaf() {
     }
 
     if (!paused) {
-      const duration = FLOW[stepIndex].seconds * 1000;
-      const elapsed = now - stepStartedAt - pausedTotal;
-      const t = elapsed / duration;
-      setCumulativeProgress(stepIndex, t);
+      if (patternKey === "square") {
+        const duration = FLOW[stepIndex].seconds * 1000;
+        const elapsed = now - stepStartedAt - pausedTotal;
+        const t = Math.max(0, Math.min(1, elapsed / duration));
+
+        setSquareCumulative(stepIndex, t);
+        hideCircleProgress();
+      } else {
+        // 4-7-8: progress is based on whole cycle time (19s), not per-step segments
+        const totalMs = getCycleTotalMs(); // 19000
+        const elapsed = now - cycleStartedAt - pausedTotal;
+        const p = elapsed / totalMs;
+
+        setCircleCumulative01(p);
+        hideSquareProgress();
+      }
     }
 
     rafId = requestAnimationFrame(tick);
@@ -362,6 +363,7 @@ function startBreathing() {
   paused = false;
   pausedTotal = 0;
   stepStartedAt = performance.now();
+  cycleStartedAt = stepStartedAt;
 
   clearTimer();
   render();
@@ -386,7 +388,9 @@ function startBreathing() {
       stepStartedAt = performance.now();
       pausedTotal = 0;
 
+      // reset cycle start when we wrap
       if (prevIndex === FLOW.length - 1 && stepIndex === 0) {
+        cycleStartedAt = performance.now();
         softResetProgress();
       }
 
@@ -405,11 +409,10 @@ function setPattern(nextKey) {
   patternKey = nextKey;
   FLOW = PATTERNS[patternKey].flow;
 
-  // Recalc circle segments for new flow
-  circleSegmentLens = [];
-  if (patternKey === "478") ensureCircleSegmentLens();
+  // Ensure circle init (dash values) for mobile
+  initCircleProgress();
 
-  // Restart flow for clarity
+  // Restart for clarity
   startCountdown();
 }
 
