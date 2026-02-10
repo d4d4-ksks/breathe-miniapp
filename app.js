@@ -216,17 +216,29 @@ function animateSecondTick() {
 
 // --- Circle breathing visual (4-7-8 only) ---
 function updateCircleBreathVisual(stepKey) {
-  if (patternKey !== "478") return;
-
   const circle = document.querySelector(".circleOnly");
   if (!circle) return;
 
-  circle.classList.remove("circle-breath-in", "circle-breath-out");
+  // Для квадрата — не трогаем, на всякий случай сбросим
+  if (patternKey !== "478") {
+    circle.classList.remove("circle-state-inhale", "circle-state-hold", "circle-state-exhale");
+    return;
+  }
 
-  if (stepKey === "inhale") circle.classList.add("circle-breath-in");
-  if (stepKey === "exhale") circle.classList.add("circle-breath-out");
-  // hold: keep current scale (no change)
+  circle.classList.remove("circle-state-inhale", "circle-state-hold", "circle-state-exhale");
+
+  if (stepKey === "inhale") {
+    circle.classList.add("circle-state-inhale");
+  } else if (stepKey === "hold") {
+    circle.classList.add("circle-state-hold");
+  } else if (stepKey === "exhale") {
+    circle.classList.add("circle-state-exhale");
+  } else {
+    // если вдруг появится другое имя шага — просто обычный
+    circle.classList.add("circle-state-inhale");
+  }
 }
+
 
 // --- State machine ---
 let mode = "countdown"; // countdown | breathing
