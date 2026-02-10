@@ -216,7 +216,7 @@ function animateSecondTick() {
 
 // --- Circle breathing visual (4-7-8 only) ---
 function updateCircleBreathVisual(stepKey) {
-  const circle = document.querySelector(".circleOnly");
+  const circle = document.querySelector(".circleWrap");
   if (!circle) return;
 
   // Для квадрата — не трогаем, на всякий случай сбросим
