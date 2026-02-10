@@ -326,4 +326,6 @@ body.mode-478 .circleOnly { display: block; }
 .circle-breath-out{
   transform: scale(1);
 }
+.circleOnly { transform-origin: 50% 50%; }
+#circleProgress { transform-origin: 50% 50%; transform: rotate(-90deg); }
 
