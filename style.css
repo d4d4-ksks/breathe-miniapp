@@ -297,4 +297,6 @@ body.is-dark{
 
 body.mode-478 .squareOnly { display: none; }
 body.mode-478 .circleOnly { display: block; }
+#squareProgress, #circleProgress { transition: opacity 180ms ease; }
+#squareProgress.is-resetting, #circleProgress.is-resetting { opacity: 0; }
 
