@@ -154,9 +154,7 @@ function initSquareProgress() {
 }
 
 function initCircleProgress() {
-  const r = parseFloat(circleProgress.getAttribute("r") || "0");
-  circleTotalLen = 2 * Math.PI * r;
-
+  circleTotalLen = 100; // потому что pathLength="100"
   circleProgress.style.strokeDasharray = String(circleTotalLen);
   circleProgress.style.strokeDashoffset = String(circleTotalLen);
 }
