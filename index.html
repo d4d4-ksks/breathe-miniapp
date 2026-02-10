@@ -14,8 +14,8 @@
     <main class="screen">
       <header class="top">
         <div class="segmented" role="tablist" aria-label="Схемы дыхания">
-          <button class="seg active" type="button" aria-selected="true">Квадрат</button>
-          <button class="seg" type="button" disabled aria-selected="false">4-7-8</button>
+          <button class="seg active" id="tabSquare" type="button" aria-selected="true">Квадрат</button>
+          <button class="seg" id="tab478" type="button" aria-selected="false">4-7-8</button>
         </div>
       </header>
 
@@ -24,53 +24,52 @@
 
         <div class="squareCard" id="squareCard" hidden>
           <div class="square" aria-hidden="true">
-  <svg
-    class="squareSvg"
-    viewBox="0 0 100 100"
-    preserveAspectRatio="xMidYMid meet"
-  >
-    <!-- серый фон -->
-<path
-  d="M5 83
-     V17
-     A12 12 0 0 1 17 5
-     H83
-     A12 12 0 0 1 95 17
-     V83
-     A12 12 0 0 1 83 95
-     H17
-     A12 12 0 0 1 5 83"
-  fill="none"
-  stroke="var(--square-bg, rgba(15,23,42,0.12))"
-  stroke-width="4"
-/>
+<!-- КВАДРАТ -->
+<svg class="squareSvg squareOnly" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+  <!-- серый фон -->
+  <path
+    d="M5 83 V17 A12 12 0 0 1 17 5 H83 A12 12 0 0 1 95 17 V83 A12 12 0 0 1 83 95 H17 A12 12 0 0 1 5 83"
+    fill="none"
+    stroke="var(--square-bg, rgba(15,23,42,0.12))"
+    stroke-width="4"
+  />
+  <!-- прогресс -->
+  <path
+    id="squareProgress"
+    d="M5 83 V17 A12 12 0 0 1 17 5 H83 A12 12 0 0 1 95 17 V83 A12 12 0 0 1 83 95 H17 A12 12 0 0 1 5 83"
+    fill="none"
+    stroke="var(--accent, #2563eb)"
+    stroke-width="4"
+    stroke-linecap="round"
+  />
+</svg>
 
-    <!-- прогресс -->
-<path
-  id="squareProgress"
-  d="M5 83
-     V17
-     A12 12 0 0 1 17 5
-     H83
-     A12 12 0 0 1 95 17
-     V83
-     A12 12 0 0 1 83 95
-     H17
-     A12 12 0 0 1 5 83"
-  fill="none"
-  stroke="var(--accent)"
-  stroke-width="4"
-  stroke-linecap="round"
-  stroke-dasharray="0 999"
-  stroke-dashoffset="0"
-/>
-  </svg>
+<!-- КРУГ -->
+<svg class="squareSvg circleOnly" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+  <!-- серый фон -->
+  <circle
+    cx="50" cy="50" r="42"
+    fill="none"
+    stroke="var(--square-bg, rgba(15,23,42,0.12))"
+    stroke-width="4"
+  />
+  <!-- прогресс -->
+  <circle
+    id="circleProgress"
+    cx="50" cy="50" r="42"
+    fill="none"
+    stroke="var(--accent, #2563eb)"
+    stroke-width="4"
+    stroke-linecap="round"
+  />
+</svg>
 
-  <!-- текст в центре остаётся как был -->
-  <div class="phase phase-inSquare">
-    <div class="phaseTitle" id="phaseTitle">Вдох</div>
-    <div class="phaseSeconds" id="phaseSeconds">4</div>
-  </div>
+<!-- ТЕКСТ -->
+<div class="phase phase-inSquare">
+  <div class="phaseTitle" id="phaseTitle">Вдох</div>
+  <div class="phaseSeconds" id="phaseSeconds">4</div>
+</div>
+
 </div>
 
 
