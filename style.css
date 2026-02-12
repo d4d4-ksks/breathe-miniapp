@@ -347,4 +347,19 @@ body.mode-478 .circleOnly { display: block; }
 }
 .circleOnly { transform-origin: 50% 50%; }
 #circleProgress { transform-origin: 50% 50%; transform: rotate(-90deg); }
+/* По умолчанию (режим "Квадрат"): прячем круг */
+.circleWrap {
+  display: none;
+}
+
+/* Когда включен 4-7-8 (body.mode-478 ставит JS): прячем квадрат и показываем круг */
+body.mode-478 .circleWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body.mode-478 .squareOnly {
+  display: none;
+}
 
