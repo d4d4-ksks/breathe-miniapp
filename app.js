@@ -90,6 +90,29 @@ function haptic(type = "soft") {
   window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.(type);
 }
 
+// --- stat ---
+const ANALYTICS_URL = "https://breathe-analytics.d4-chromy.workers.dev/track";
+
+function trackEvent(type) {
+  try {
+    const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    if (!user?.id) return; // в обычном браузере user_id нет — просто молча пропускаем
+
+    fetch(ANALYTICS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: user.id,
+        pattern: patternKey,   // square / 478
+        ts: Date.now(),
+        type,                 // "start" | "switch" | "restart" | etc
+      }),
+    }).catch(() => {});
+  } catch (e) {
+    // ничего не делаем, аналитика не должна ломать приложение
+  }
+}
+
 // --- UI ---
 const elCountdown = must("countdown");
 const elSquareCard = must("squareCard");
@@ -368,6 +391,8 @@ function startCountdown() {
 
 function startBreathing() {
   mode = "breathing";
+  trackEvent("start");
+
 
   stepIndex = 0;
   secondsLeft = FLOW[0].seconds;
@@ -424,6 +449,8 @@ function setPattern(nextKey) {
   // Ensure circle init (dash values) for mobile
   initCircleProgress();
 
+  trackEvent("switch");
+
   // Restart for clarity
   startCountdown();
 }
@@ -452,6 +479,8 @@ pauseBtn.addEventListener("click", () => {
 
 restartBtn.addEventListener("click", () => {
   startCountdown();
+  trackEvent("restart");
+
 });
 
 // auto start
